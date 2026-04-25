@@ -1,11 +1,13 @@
 {
   "name": "mcp-101-cli-project-ts",
+  "type": "module",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "server": "tsx src/server.ts",
-    "client": "tsx src/client.ts"
+    "client": "tsx src/client.ts",
+    "inspect": "npx @modelcontextprotocol/inspector tsx src/server.ts"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +19,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "prettier": "^3.8.3",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   }
