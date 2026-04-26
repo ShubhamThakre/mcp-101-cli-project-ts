@@ -71,7 +71,7 @@ server.registerTool(
 
 server.registerResource(
   "documents",
-  "docs://document",
+  "docs://documents",
   { description: "returns all the documents" },
   async (uri) => {
     return {
