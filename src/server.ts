@@ -6,6 +6,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const docs: Record<string, string> = {
   "deposition.md": "This deposition covers the testimony of John Doe, P.E.",
@@ -68,10 +69,59 @@ server.registerTool(
   }
 );
 
-// TODO: register docs://documents static resource (returns list of doc IDs as JSON)
-// TODO: register docs://documents/{doc_id} template resource (returns doc content as plain text)
+server.registerResource(
+  "documents",
+  "docs://document",
+  { description: "returns all the documents" },
+  async (uri) => {
+    return {
+      contents: [
+        { text: JSON.stringify(Object.keys(docs)), uri: uri.href, mimeType: "application/json" },
+      ],
+    };
+  }
+);
 
-// TODO: register format prompt (rewrites a doc in markdown using edit_document tool)
+server.registerResource(
+  "document-content",
+  new ResourceTemplate("docs://documents/{doc_id}", { list: undefined }),
+  { description: "returns the document content by the ID" },
+  async (uri) => {
+    const doc_id = uri.href.split("/").pop()!;
+    if (!(doc_id in docs)) {
+      return { contents: [{ uri: uri.href, text: "doc id not found" }] };
+    }
+    return { contents: [{ uri: uri.href, mimeType: "text/plain", text: docs[doc_id] }] };
+  }
+);
 
+server.registerPrompt(
+  "format",
+  {
+    description: "Rewrites a document in clearn markdown",
+    argsSchema: {
+      doc_id: z.string().describe("The ID of the document to format"),
+    },
+  },
+  async ({ doc_id }) => {
+    return {
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `Your goal is to reformat the document to be written with markdown syntax.
+            
+            Add in headers, bullet points, tables, etc as necessary. Feel free to add in structure.
+            Use the 'edit_document' tool to edit the document.
+            
+            Document ID: ${doc_id}
+            Content: ${docs[doc_id]}`,
+          },
+        },
+      ],
+    };
+  }
+);
 const transport = new StdioServerTransport();
 await server.connect(transport);
